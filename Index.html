@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Duifmelden Noord</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --blauw:#1a3a6b;--lb:#2563eb;--accent:#f59e0b;
+  --bg:#f1f5f9;--wit:#fff;--tekst:#1e293b;
+  --grijs:#64748b;--border:#e2e8f0;--groen:#16a34a;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tekst);padding-bottom:70px;}
+
+header{background:var(--blauw);color:white;padding:12px 14px;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px rgba(0,0,0,0.3);}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+header h1{font-size:15px;font-weight:700;}
+header small{font-size:11px;opacity:0.75;display:block;margin-top:2px;}
+.refresh-btn{background:var(--accent);border:none;color:white;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{display:inline-block;animation:spin 0.8s linear infinite;}
+
+/* VLUCHTEN TABS */
+.vluchten-bar{background:var(--blauw);padding:0 14px 10px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+.vluchten-bar::-webkit-scrollbar{display:none;}
+.vlucht-tab{flex-shrink:0;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.85);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.vlucht-tab.actief{background:var(--accent);border-color:var(--accent);color:white;}
+
+/* VLUCHTINFO */
+.info-balk{display:grid;grid-template-columns:repeat(3,1fr);background:var(--border);gap:1px;border-bottom:2px solid var(--border);}
+.info-cel{background:var(--wit);padding:9px 10px;text-align:center;}
+.info-lbl{font-size:9px;color:var(--grijs);text-transform:uppercase;letter-spacing:0.5px;}
+.info-val{font-size:15px;font-weight:800;color:var(--blauw);margin-top:2px;}
+.info-val.g{color:var(--groen);}
+
+/* FILTER TOGGLE */
+.filter-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--wit);border-bottom:1px solid var(--border);cursor:pointer;}
+.filter-toggle-links{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--blauw);}
+.filter-badge{background:var(--lb);color:white;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;display:none;}
+.filter-badge.toon{display:inline;}
+.filter-pijl{font-size:14px;color:var(--grijs);transition:transform 0.2s;}
+.filter-pijl.open{transform:rotate(180deg);}
+.filter-reset{font-size:11px;color:var(--lb);font-weight:600;background:none;border:none;cursor:pointer;padding:4px 8px;}
+
+/* FILTER PANEEL */
+.filter-paneel{display:none;background:var(--wit);border-bottom:2px solid var(--border);padding:12px 14px 16px;}
+.filter-paneel.open{display:block;}
+.filter-groep{margin-bottom:14px;}
+.filter-groep:last-child{margin-bottom:0;}
+.fg-titel{font-size:10px;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--grijs);cursor:pointer;transition:all 0.15s;white-space:nowrap;user-select:none;}
+.chip.actief{background:var(--lb);border-color:var(--lb);color:white;}
+
+/* ZOEK */
+.zoek-wrap{padding:10px 14px;background:var(--wit);border-bottom:1px solid var(--border);position:relative;}
+.zoek-wrap input{width:100%;padding:10px 36px 10px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:15px;background:var(--bg);color:var(--tekst);outline:none;-webkit-appearance:none;}
+.zoek-wrap input:focus{border-color:var(--lb);background:white;}
+.zoek-wis{position:absolute;right:22px;top:50%;transform:translateY(-50%);background:var(--grijs);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.zoek-wis.toon{display:flex;}
+
+/* RESULTATEN KOP */
+.res-kop{padding:9px 14px;background:var(--blauw);color:white;display:flex;justify-content:space-between;align-items:center;}
+.res-kop-titel{font-size:13px;font-weight:700;}
+.res-kop-aantal{font-size:11px;opacity:0.8;}
+
+/* TABEL */
+.tabel-header{display:grid;grid-template-columns:38px 1fr 68px 56px;background:#e8edf5;border-bottom:1px solid var(--border);}
+.th{padding:6px 6px;font-size:10px;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.4px;}
+.th.r{text-align:right;}
+
+.rij{display:grid;grid-template-columns:38px 1fr 68px 56px;align-items:center;border-bottom:1px solid var(--border);background:white;cursor:pointer;transition:background 0.1s;}
+.rij:last-child{border-bottom:none;}
+.rij:nth-child(even){background:#fafbfd;}
+.rij:active{background:#eff6ff;}
+.rij.pos1{background:#fffbeb;}
+.rij.pos2{background:#f9f9fb;}
+.rij.pos3{background:#fdf6f0;}
+
+.cel{padding:9px 6px;}
+.cel.r{text-align:right;padding-right:12px;}
+.badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;margin:0 auto;}
+.b1{background:#ffd700;color:#6b4c00;}
+.b2{background:#c0c0c0;color:#333;}
+.b3{background:#cd7f32;color:white;}
+.bn{background:var(--bg);color:var(--grijs);font-size:10px;border:1px solid var(--border);}
+.rij-naam{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rij-naam em{background:#fef08a;font-style:normal;border-radius:2px;padding:0 2px;}
+.rij-sub{font-size:10px;color:var(--grijs);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rij-snel{font-size:12px;font-weight:700;color:var(--lb);}
+.rij-tijd{font-size:10px;color:var(--grijs);margin-top:2px;}
+
+/* POPUP */
+.popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-end;}
+.popup-overlay.toon{display:flex;}
+.popup{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;position:relative;}
+.popup-greep{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
+.popup-sluit{position:absolute;top:16px;right:16px;background:var(--bg);border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;color:var(--grijs);}
+.popup-nr{font-size:11px;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.popup-naam{font-size:20px;font-weight:800;margin-bottom:2px;}
+.popup-plaats{font-size:13px;color:var(--grijs);margin-bottom:16px;}
+.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pv{background:var(--bg);border-radius:10px;padding:12px;}
+.pv-lbl{font-size:9px;color:var(--grijs);text-transform:uppercase;letter-spacing:0.5px;}
+.pv-val{font-size:17px;font-weight:800;margin-top:3px;color:var(--blauw);}
+.pv-val.g{color:var(--groen);}
+
+/* LADEN */
+.laden{text-align:center;padding:50px 20px;color:var(--grijs);}
+.loader{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--lb);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px;}
+
+/* GEEN RESULTATEN */
+.geen{text-align:center;padding:40px 20px;color:var(--grijs);}
+.geen .emoji{font-size:40px;margin-bottom:10px;}
+
+/* PAGINA's */
+.pagina{display:none;}
+.pagina.actief{display:block;}
+
+/* MEER PAGINA */
+.meer-kaart{background:white;margin:12px 14px 0;border-radius:12px;border:1px solid var(--border);overflow:hidden;}
+.meer-sectie-titel{font-size:11px;font-weight:700;color:var(--grijs);text-transform:uppercase;letter-spacing:0.5px;padding:14px 14px 6px;}
+.meer-item{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--tekst);gap:12px;}
+.meer-item:last-child{border-bottom:none;}
+.meer-item:active{background:var(--bg);}
+.meer-ico{font-size:22px;width:30px;text-align:center;flex-shrink:0;}
+.meer-tekst strong{display:block;font-size:14px;}
+.meer-tekst span{font-size:12px;color:var(--grijs);}
+.meer-pijl{margin-left:auto;color:var(--border);font-size:22px;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -2px 8px rgba(0,0,0,0.08);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 10px;cursor:pointer;color:var(--grijs);font-size:10px;font-weight:600;border:none;background:none;}
+.nav-btn .ico{font-size:21px;}
+.nav-btn.actief{color:var(--lb);}
+
+/* WA BANNER */
+.wa-banner{display:flex;align-items:center;gap:10px;background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:10px 12px;margin:12px 14px 0;text-decoration:none;color:#166534;}
+.wa-banner strong{font-size:13px;display:block;}
+.wa-banner span{font-size:11px;opacity:0.85;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div>
+      <h1>🐦 Duifmelden Noord</h1>
+      <small id="updateTijd">Laden...</small>
+    </div>
+    <button class="refresh-btn" onclick="laadData()">
+      <span id="refreshIco">🔄</span> Vernieuwen
+    </button>
+  </div>
+</header>
+
+<!-- ══ PAGINA MELDLIJST ══ -->
+<div class="pagina actief" id="pagina-meldlijst">
+
+  <!-- Vluchten tabs -->
+  <div class="vluchten-bar">
+    <div class="vlucht-tab actief" data-ow="" data-vlucht="0" onclick="selectVlucht(this)">🏁 DUFFEL (V21)</div>
+    <div class="vlucht-tab" data-ow="" data-vlucht="1" onclick="selectVlucht(this)">WEERT (V21)</div>
+    <div class="vlucht-tab" data-ow="" data-vlucht="2" onclick="selectVlucht(this)">SOURDUN (E21)</div>
+  </div>
+
+  <!-- Vluchtinfo -->
+  <div class="info-balk">
+    <div class="info-cel">
+      <div class="info-lbl">Ingemand</div>
+      <div class="info-val" id="vi-ing">10.044</div>
+    </div>
+    <div class="info-cel">
+      <div class="info-lbl">Prijsduiven</div>
+      <div class="info-val" id="vi-prijs">3.348</div>
+    </div>
+    <div class="info-cel">
+      <div class="info-lbl">Aangekomen</div>
+      <div class="info-val g" id="vi-aan">2.879</div>
+    </div>
+  </div>
+
+  <!-- Filter toggle -->
+  <div class="filter-toggle" onclick="toggleFilter()">
+    <div class="filter-toggle-links">
+      <span>⚙️ Filters</span>
+      <span class="filter-badge" id="filterBadge">0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="filter-reset" onclick="event.stopPropagation();resetFilters()">Reset</button>
+      <span class="filter-pijl" id="filterPijl">▼</span>
+    </div>
+  </div>
+
+  <!-- Filter paneel -->
+  <div class="filter-paneel" id="filterPaneel">
+
+    <div class="filter-groep">
+      <div class="fg-titel">🧭 Oost of West</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="ow" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="ow" data-val="oost" onclick="kiesChip(this)">🔵 Oost</span>
+        <span class="chip" data-groep="ow" data-val="west" onclick="kiesChip(this)">🔴 West</span>
+      </div>
+    </div>
+
+    <div class="filter-groep">
+      <div class="fg-titel">📍 Rayon</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="rayon" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="rayon" data-val="A" onclick="kiesChip(this)">A</span>
+        <span class="chip" data-groep="rayon" data-val="B" onclick="kiesChip(this)">B</span>
+        <span class="chip" data-groep="rayon" data-val="C" onclick="kiesChip(this)">C</span>
+        <span class="chip" data-groep="rayon" data-val="D" onclick="kiesChip(this)">D</span>
+        <span class="chip" data-groep="rayon" data-val="E" onclick="kiesChip(this)">E</span>
+        <span class="chip" data-groep="rayon" data-val="F" onclick="kiesChip(this)">F</span>
+        <span class="chip" data-groep="rayon" data-val="G" onclick="kiesChip(this)">G</span>
+        <span class="chip" data-groep="rayon" data-val="H" onclick="kiesChip(this)">H</span>
+        <span class="chip" data-groep="rayon" data-val="J" onclick="kiesChip(this)">J</span>
+        <span class="chip" data-groep="rayon" data-val="K" onclick="kiesChip(this)">K</span>
+      </div>
+    </div>
+
+    <div class="filter-groep">
+      <div class="fg-titel">🤝 Samenspelen</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="samen" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="samen" data-val="A1" onclick="kiesChip(this)">A1</span>
+        <span class="chip" data-groep="samen" data-val="A2" onclick="kiesChip(this)">A2</span>
+        <span class="chip" data-groep="samen" data-val="B" onclick="kiesChip(this)">B</span>
+        <span class="chip" data-groep="samen" data-val="C" onclick="kiesChip(this)">C</span>
+        <span class="chip" data-groep="samen" data-val="D1" onclick="kiesChip(this)">D1</span>
+        <span class="chip" data-groep="samen" data-val="D2" onclick="kiesChip(this)">D2</span>
+        <span class="chip" data-groep="samen" data-val="E1" onclick="kiesChip(this)">E1</span>
+        <span class="chip" data-groep="samen" data-val="E2" onclick="kiesChip(this)">E2</span>
+        <span class="chip" data-groep="samen" data-val="F1" onclick="kiesChip(this)">F1</span>
+        <span class="chip" data-groep="samen" data-val="F2" onclick="kiesChip(this)">F2</span>
+      </div>
+    </div>
+
+    <div class="filter-groep">
+      <div class="fg-titel">🏠 NIC</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="nic" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="nic" data-val="0210" onclick="kiesChip(this)">Damwoude</span>
+        <span class="chip" data-groep="nic" data-val="0226" onclick="kiesChip(this)">ZWH Balk</span>
+        <span class="chip" data-groep="nic" data-val="0232" onclick="kiesChip(this)">Jubbega</span>
+        <span class="chip" data-groep="nic" data-val="0256" onclick="kiesChip(this)">Drachten</span>
+        <span class="chip" data-groep="nic" data-val="0267" onclick="kiesChip(this)">Holwerd</span>
+        <span class="chip" data-groep="nic" data-val="0413" onclick="kiesChip(this)">Emmeloord</span>
+        <span class="chip" data-groep="nic" data-val="0101" onclick="kiesChip(this)">Appingedam</span>
+        <span class="chip" data-groep="nic" data-val="0109" onclick="kiesChip(this)">Warfhuizen</span>
+        <span class="chip" data-groep="nic" data-val="0137" onclick="kiesChip(this)">Oude Pekela</span>
+        <span class="chip" data-groep="nic" data-val="0157" onclick="kiesChip(this)">Zuidhorn</span>
+        <span class="chip" data-groep="nic" data-val="0303" onclick="kiesChip(this)">Assen</span>
+        <span class="chip" data-groep="nic" data-val="0305" onclick="kiesChip(this)">Dedemsvaart</span>
+        <span class="chip" data-groep="nic" data-val="0316" onclick="kiesChip(this)">Coevorden</span>
+        <span class="chip" data-groep="nic" data-val="0328" onclick="kiesChip(this)">Hoogeveen</span>
+        <span class="chip" data-groep="nic" data-val="0342" onclick="kiesChip(this)">Meppel</span>
+        <span class="chip" data-groep="nic" data-val="0356" onclick="kiesChip(this)">Ter Apel</span>
+        <span class="chip" data-groep="nic" data-val="0429" onclick="kiesChip(this)">Nieuw-Leusen</span>
+      </div>
+    </div>
+
+    <div class="filter-groep">
+      <div class="fg-titel">🏆 CCG</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="ccg" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="ccg" data-val="Kuststrook" onclick="kiesChip(this)">De Kuststrook</span>
+        <span class="chip" data-groep="ccg" data-val="NOP" onclick="kiesChip(this)">NOP/Urk</span>
+        <span class="chip" data-groep="ccg" data-val="Oostgrens" onclick="kiesChip(this)">De Oostgrens</span>
+        <span class="chip" data-groep="ccg" data-val="Middelsee" onclick="kiesChip(this)">Middelsee</span>
+        <span class="chip" data-groep="ccg" data-val="CentraalDrenthe" onclick="kiesChip(this)">Centraal Drenthe</span>
+        <span class="chip" data-groep="ccg" data-val="DGCC" onclick="kiesChip(this)">D.G.C.C.</span>
+        <span class="chip" data-groep="ccg" data-val="Dollard" onclick="kiesChip(this)">Dollard e.o.</span>
+        <span class="chip" data-groep="ccg" data-val="GCC" onclick="kiesChip(this)">G.C.C</span>
+        <span class="chip" data-groep="ccg" data-val="ReestVecht" onclick="kiesChip(this)">Reest en Vecht</span>
+        <span class="chip" data-groep="ccg" data-val="RegioHoogeveen" onclick="kiesChip(this)">Regio Hoogeveen</span>
+        <span class="chip" data-groep="ccg" data-val="West98" onclick="kiesChip(this)">West '98</span>
+        <span class="chip" data-groep="ccg" data-val="WittePaal" onclick="kiesChip(this)">Witte Paal</span>
+        <span class="chip" data-groep="ccg" data-val="Zuidenveld" onclick="kiesChip(this)">Zuidenveld</span>
+        <span class="chip" data-groep="ccg" data-val="Zuidoost" onclick="kiesChip(this)">Zuidoost</span>
+      </div>
+    </div>
+
+    <div class="filter-groep">
+      <div class="fg-titel">🎯 Speciale filter</div>
+      <div class="chips">
+        <span class="chip actief" data-groep="spec" data-val="" onclick="kiesChip(this)">Alle</span>
+        <span class="chip" data-groep="spec" data-val="jeugd" onclick="kiesChip(this)">Jeugdleden</span>
+        <span class="chip" data-groep="spec" data-val="ladies" onclick="kiesChip(this)">Ladies League</span>
+        <span class="chip" data-groep="spec" data-val="eerste" onclick="kiesChip(this)">1e duif p. deelnemer</span>
+      </div>
+    </div>
+
+  </div><!-- /filter-paneel -->
+
+  <!-- Zoekbalk -->
+  <div class="zoek-wrap">
+    <input type="search" id="zoekInput" placeholder="🔍 Zoek op naam of
